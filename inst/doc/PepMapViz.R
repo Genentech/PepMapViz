@@ -1,65 +1,23 @@
-PepMapViz: A Versatile Toolkit for Peptide Mapping, Visualization, and
-Comparative Exploration
-================
-
-## PepMapViz
-
-<!-- badges: start -->
-<!-- badges: end -->
-
-PepMapViz is a versatile R visualization package that empowers
-researchers with comprehensive visualization tools for seamlessly
-mapping peptides to protein sequences, identifying distinct domains and
-regions of interest, accentuating mutations, and highlighting
-post-translational modifications, all while enabling comparisons across
-diverse experimental conditions. Potential applications of PepMapViz
-include the visualization of cross-software mass spectrometry results at
-the peptide level for specific protein and domain details in a
-linearized format and post-translational modification coverage across
-different experimental conditions; unraveling insights into disease
-mechanisms. It also enables visualization of MHC-presented peptide
-clusters in different antibody regions predicting immunogenicity in
-antibody drug development.
-
-## Installation
-
-You can install the development version of PepMapViz from GitHub using
-the `devtools` package.
-
-``` r
-# Install devtools if you haven't already
-install.packages("devtools")
-
-# Install PepMapViz from the package
-devtools::build()
-devtools::install()
-```
-
-## Features
-
-1.  Mapping peptides to protein sequences
-2.  Identifying distinct domains and regions of interest
-3.  Accentuating mutations
-4.  Highlighting post-translational modifications
-5.  Enabling comparisons across diverse experimental conditions
-
-## Usage
-
-This is a basic example which shows you how to solve a common problem:
-
-``` r
+## ----setup--------------------------------------------------------------------
 library(PepMapViz)
 
-# Read all files from a folder
-folder_path <- system.file("extdata", package = "PepMapViz")
-resulting_df <- combine_files_from_folder(folder_path)
+## -----------------------------------------------------------------------------
+# Access the input files
+input_file_folder <- system.file("extdata", package = "PepMapViz")
 
-# Strip the sequence 
+# Read the input files
+resulting_df <- combine_files_from_folder(input_file_folder)
+head(resulting_df)
+
+## -----------------------------------------------------------------------------
+# Strip the sequence
 striped_data_peaks <- strip_sequence(resulting_df, "Peptide", "Sequence", "PEAKS")
+head(striped_data_peaks)
 
+## -----------------------------------------------------------------------------
 # Extract modifications information
-PTM_table <- data.frame(PTM_mass = c("15.99", ".98", "57.02"),
-                        PTM_type = c("Ox", "Deamid", "Cam"))
+PTM_table <- data.frame(PTM_mass = c("15.99", ".98", "57.02", "42.01"),
+                        PTM_type = c("Ox", "Deamid", "Cam", "Acetyl"))
 converted_data_peaks <- obtain_mod(
   striped_data_peaks,
   "Peptide",
@@ -69,7 +27,9 @@ converted_data_peaks <- obtain_mod(
   PTM_annotation = TRUE,
   PTM_mass_column = "PTM_mass"
 )
+head(converted_data_peaks)
 
+## -----------------------------------------------------------------------------
 # Match peptide sequence with provided sequence and calculate positions
 whole_seq <- data.frame(
   Epitope = c("Boco", "Boco"),
@@ -93,7 +53,9 @@ matching_result <- match_and_calculate_positions(
     "PTM_type"
   )
 )
+head(matching_result)
 
+## -----------------------------------------------------------------------------
 # Quantify matched peptide sequences by PSM
 matching_columns = c("Chain", "Epitope")
 distinct_columns = c("Donor")
@@ -129,17 +91,8 @@ for (i in 1:nrow(region)) {
 }
   
 head(result_with_psm)
-```
 
-    ##   Character Position Chain Epitope PSM Donor   PTM PTM_type Region
-    ## 1         Q        1    HC    Boco   0    D1 FALSE     <NA>     VH
-    ## 2         V        2    HC    Boco   0    D1 FALSE     <NA>     VH
-    ## 3         Q        3    HC    Boco   0    D1 FALSE     <NA>     VH
-    ## 4         L        4    HC    Boco   0    D1 FALSE     <NA>     VH
-    ## 5         V        5    HC    Boco   0    D1 FALSE     <NA>     VH
-    ## 6         Q        6    HC    Boco   0    D1 FALSE     <NA>     VH
-
-``` r
+## ----fig.width=30, fig.height=6-----------------------------------------------
 # Plotting peptide in whole provided sequence
 domain <- data.frame(
   domain_type = c("CDR H1", "CDR H2", "CDR H3", "CDR L1", "CDR L2", "CDR L3"),
@@ -169,7 +122,6 @@ PTM_color <- c(
   "Acetyl" = "magenta"
 )
 label_value = list(Donor = "D1")
-
 p_psm <- create_peptide_plot(
   result_with_psm,
   y_axis_vars,
@@ -195,15 +147,6 @@ p_psm <- create_peptide_plot(
   label_value = label_value,
   column_order = column_order
 )
-```
+print(p_psm)
 
-## Getting Started
 
-For a detailed guide on how to use PepMapViz, please refer to our
-vignette and docuemntation under inst/doc.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments

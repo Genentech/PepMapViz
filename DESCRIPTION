@@ -1,0 +1,39 @@
+Package: PepMapViz
+Title: A Versatile Toolkit for Peptide Mapping, Visualization, and
+        Comparative Exploration
+Version: 1.0.0
+Authors@R: c(
+    person(given = "Zhenru", family = "Zhou", email = "zhou.zhenru@gene.com", role = c("aut", "cre")),
+    person(given = "Qui", family = "Phung", email = "phung.qui@gene.com", role = c("aut")),
+    person(given = "Corey", family = "Bakalarski", email = "bakalarski.corey@gene.com", role = c("aut")))
+Description: A versatile R visualization package that empowers 
+    researchers with comprehensive visualization tools for seamlessly mapping peptides 
+    to protein sequences, identifying distinct domains and regions of interest, 
+    accentuating mutations, and highlighting post-translational modifications, 
+    all while enabling comparisons across diverse experimental conditions. 
+    Potential applications of PepMapViz include the visualization of cross-software 
+    mass spectrometry results at the peptide level for specific protein and domain 
+    details in a linearized format and post-translational modification coverage 
+    across different experimental conditions; unraveling insights into disease 
+    mechanisms. It also enables visualization of MHC-presented peptide clusters in 
+    different antibody regions predicting immunogenicity in antibody drug development.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports: ggplot2, stringr, ggforce, ggh4x, ggnewscale, data.table,
+        rlang
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+biocViews: Immunogenicity, MassSpectrometry, Proteomics, Peptidomics,
+        Software, Visualization
+NeedsCompilation: no
+Packaged: 2024-08-22 17:22:35 UTC; zhouz45
+Author: Zhenru Zhou [aut, cre],
+  Qui Phung [aut],
+  Corey Bakalarski [aut]
+Maintainer: Zhenru Zhou <zhou.zhenru@gene.com>
+Note: The following words are correctly spelled domain-specific terms:
+    MHC, PepMapViz, immunogenicity, linearized, spectrometry, translational. The package includes large datasets in the 'extdata' directory, which are essential for demonstrating the functionality and performance of the tools provided. These datasets are necessary for reproducibility and comprehensive testing.
