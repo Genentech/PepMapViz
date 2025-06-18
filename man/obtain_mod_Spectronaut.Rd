@@ -6,7 +6,7 @@
 \usage{
 obtain_mod_Spectronaut(
   data,
-  column,
+  mod_column,
   PTM_table = NULL,
   PTM_annotation = FALSE,
   PTM_mass_column
@@ -15,7 +15,7 @@ obtain_mod_Spectronaut(
 \arguments{
 \item{data}{A data.table with a column containing modified peptide sequences.}
 
-\item{column}{The name of the column containing the modified peptide sequences.}
+\item{mod_column}{The name of the column containing the modified peptide sequences.}
 
 \item{PTM_table}{A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.}
 

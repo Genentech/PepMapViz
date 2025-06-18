@@ -8,13 +8,14 @@
 #' multiple platform, the PTM mass to type table needs to be provided if convertion to PTM_type is needed.
 #' The result includes 'Peptide', 'PTM_position', 'PTM_type' and 'PTM_mass' columns.The function chooses
 #' the appropriate converting method based on the specified data type ('PEAKS',
-#' 'Spectronaut', 'MSFragger', 'Comet', 'DIANN', 'Skyline' or 'Maxquant'),
+#' 'Spectronaut', 'MSFragger', 'Comet', 'DIANN', 'Skyline', 'Maxquant', 'mzIdenML' or 'mzTab'),
 #' allowing you to convert the data into a consistent format for further analysis.
 #'
 #' @param data A data frame with the peptide sequences.
-#' @param column The name of the column containing the modified peptide sequences.
-#' @param strip_seq_col (Optional) The name of the column containing the stripped peptide sequences.
-#                      This parameter is required for the "MSFragger" type and can be omitted for other types.
+#' @param mod_column The name of the column containing the modified peptide sequences.
+#' @param seq_column (Optional) The name of the column containing peptide sequences for MSFragger, mzid and mzTab.
+#'                     This parameter is required for the "MSFragger", "mzIdenML" and "mzTab" type and can be omitted
+#'                    for other types.
 #' @param PTM_table A data frame with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param type A character string specifying the data type (e.g. 'Skyline' or 'Maxquant').
@@ -40,7 +41,7 @@
 #'   data_skyline,
 #'   'Peptide Modified Sequence',
 #'   'Skyline',
-#'   strip_seq_col = NULL,
+#'   seq_column = NULL,
 #'   PTM_table,
 #'   PTM_annotation = TRUE,
 #'   PTM_mass_column = "PTM_mass"
@@ -62,7 +63,7 @@
 #'   data_maxquant,
 #'   'Modified sequence',
 #'   'Maxquant',
-#'   strip_seq_col = NULL,
+#'   seq_column = NULL,
 #'   PTM_table,
 #'   PTM_annotation = TRUE,
 #'   PTM_mass_column = "PTM_mass"
@@ -76,38 +77,58 @@
 
 # Define the wrap-up function
 obtain_mod <- function(data,
-                       column,
+                       mod_column,
                        type,
-                       strip_seq_col = NULL,
+                       seq_column = NULL,
                        PTM_table = NULL,
                        PTM_annotation = FALSE,
                        PTM_mass_column) {
   if (type == "MSFragger") {
-    if (is.null(strip_seq_col)) {
-      stop("strip_seq_col is required for 'MSFragger' type.")
+    if (is.null(seq_column)) {
+      stop("seq_column is required for 'MSFragger'.")
     }
     result <- obtain_mod_MSFragger(data,
-                                   column,
-                                   strip_seq_col,
+                                   mod_column,
+                                   seq_column,
+                                   PTM_table,
+                                   PTM_annotation,
+                                   PTM_mass_column)
+  } else if (type == "mzIdenML") {
+      if (is.null(seq_column)) {
+        stop("seq_column is required for 'mzIdenML'.")
+      }
+      result <- obtain_mod_mzIdenML(data,
+                                     mod_column,
+                                     seq_column,
+                                     PTM_table,
+                                     PTM_annotation,
+                                     PTM_mass_column)
+  } else if (type == "mzTab") {
+    if (is.null(seq_column)) {
+      stop("seq_column is required for 'mzTab'.")
+    }
+    result <- obtain_mod_mzTab(data,
+                                   mod_column,
+                                   seq_column,
                                    PTM_table,
                                    PTM_annotation,
                                    PTM_mass_column)
   } else if (type == "Spectronaut") {
-    result <- obtain_mod_Spectronaut(data, column, PTM_table, PTM_annotation, PTM_mass_column)
+    result <- obtain_mod_Spectronaut(data, mod_column, PTM_table, PTM_annotation, PTM_mass_column)
   } else if (type == "PEAKS") {
-    result <- obtain_mod_PEAKS(data, column, PTM_table, PTM_annotation, PTM_mass_column)
+    result <- obtain_mod_PEAKS(data, mod_column, PTM_table, PTM_annotation, PTM_mass_column)
   } else if (type == "Comet") {
-    result <- obtain_mod_Comet(data, column, PTM_table, PTM_annotation, PTM_mass_column)
+    result <- obtain_mod_Comet(data, mod_column, PTM_table, PTM_annotation, PTM_mass_column)
   } else if (type == "DIANN") {
-    result <- obtain_mod_DIANN(data, column, PTM_table, PTM_annotation, PTM_mass_column)
+    result <- obtain_mod_DIANN(data, mod_column, PTM_table, PTM_annotation, PTM_mass_column)
   } else if (type == "Skyline") {
-    result <- obtain_mod_Skyline(data, column, PTM_table, PTM_annotation, PTM_mass_column)
+    result <- obtain_mod_Skyline(data, mod_column, PTM_table, PTM_annotation, PTM_mass_column)
   } else if (type == "Maxquant") {
-    result <- obtain_mod_Maxquant(data, column, PTM_table, PTM_annotation, PTM_mass_column)
+    result <- obtain_mod_Maxquant(data, mod_column, PTM_table, PTM_annotation, PTM_mass_column)
   } else {
     stop(
       "Invalid type. Supported types are 'PEAKS', 'Spectronaut', 'MSFragger',
-         'Comet', 'DIANN', 'Skyline' and 'Maxquant'."
+         'Comet', 'DIANN', 'Skyline', 'Maxquant', 'mzIdenML' or 'mzTab'"
     )
   }
   return(result)
@@ -120,7 +141,7 @@ obtain_mod <- function(data,
 #' desired format of peptide sequences and associated PTM information.
 #'
 #' @param data A dataframe with a column containing modified peptide sequences.
-#' @param column The name of the column containing the modified peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
 #' @param PTM_table A dataframe with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -143,16 +164,17 @@ obtain_mod <- function(data,
 #' )
 #' PTM_table <- data.table(PTM_mass = c(42, -0.98, 57.02),
 #'                         PTM_type = c("Acet", "Amid", "Cam"))
-#' column <- "Peptide"
+#' mod_column <- "Peptide"
 #' PTM_mass_column <- "PTM_mass"
-#' converted_data <- obtain_mod_PEAKS(data, column, PTM_table, PTM_annotation = TRUE, PTM_mass_column)
+#' converted_data <- obtain_mod_PEAKS(data, mod_column, PTM_table,
+#' PTM_annotation = TRUE, PTM_mass_column)
 #'
 #' @import data.table
 #'
 #' @export
 #'
 obtain_mod_PEAKS <- function(data,
-                             column,
+                             mod_column,
                              PTM_table = NULL,
                              PTM_annotation = FALSE,
                              PTM_mass_column) {
@@ -160,8 +182,8 @@ obtain_mod_PEAKS <- function(data,
   PTM_table <- as.data.table(PTM_table)
 
   # Extract PTM information using regular expression
-  ptm_matches <- gregexpr("\\(([^)]+)\\)", data[[column]])
-  ptm_info <- regmatches(data[[column]], ptm_matches)
+  ptm_matches <- gregexpr("\\(([^)]+)\\)", data[[mod_column]])
+  ptm_info <- regmatches(data[[mod_column]], ptm_matches)
   for (i in seq_along(ptm_info)) {
     ptm_info[[i]] <- gsub("\\+|\\(|\\)", "", ptm_info[[i]])
   }
@@ -216,7 +238,7 @@ obtain_mod_PEAKS <- function(data,
 #' sequences and associated PTM information.
 #'
 #' @param data A data.table with a column containing modified peptide sequences.
-#' @param column The name of the column containing the modified peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
 #' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -266,7 +288,7 @@ obtain_mod_PEAKS <- function(data,
 
 
 obtain_mod_Spectronaut <- function(data,
-                                   column,
+                                   mod_column,
                                    PTM_table = NULL,
                                    PTM_annotation = FALSE,
                                    PTM_mass_column) {
@@ -274,8 +296,8 @@ obtain_mod_Spectronaut <- function(data,
   PTM_table <- as.data.table(PTM_table)
 
   # Extract PTM information using regular expression
-  ptm_matches <- gregexpr("\\[([^]]+)\\]", data[[column]])
-  ptm_info <- regmatches(data[[column]], ptm_matches)
+  ptm_matches <- gregexpr("\\[([^]]+)\\]", data[[mod_column]])
+  ptm_info <- regmatches(data[[mod_column]], ptm_matches)
   for (i in seq_along(ptm_info)) {
     ptm_info[[i]] <- gsub("\\+|\\[|\\]", "", ptm_info[[i]])
   }
@@ -327,8 +349,8 @@ obtain_mod_Spectronaut <- function(data,
 #' sequences and associated PTM information.
 #'
 #' @param data A data.table with a column containing stripped sequence and a column containing PTM information.
-#' @param column The name of the column containing the modified peptide sequences.
-#' @param strip_seq_col The name of the column containing the stripped peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
+#' @param seq_column The name of the column containing peptide sequences for MSFragger.
 #' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -346,12 +368,12 @@ obtain_mod_Spectronaut <- function(data,
 #'   PTM_mass = c(42.0106, -0.98, 15.9949),
 #'   PTM_type = c("Acet", "Amid", "Ox")
 #' )
-#' column <- "Assigned Modifications"
-#' strip_seq_col <- "Peptide"
+#' mod_column <- "Assigned Modifications"
+#' seq_column <- "Peptide"
 #' converted_data <- obtain_mod_MSFragger(
 #'   data,
-#'   column,
-#'   strip_seq_col,
+#'   mod_column,
+#'   seq_column,
 #'   PTM_table,
 #'   PTM_annotation = TRUE,
 #'   PTM_mass_column = "PTM_mass"
@@ -361,8 +383,8 @@ obtain_mod_Spectronaut <- function(data,
 #'
 #' @export
 obtain_mod_MSFragger <- function(data,
-                                 column,
-                                 strip_seq_col,
+                                 mod_column,
+                                 seq_column,
                                  PTM_table = NULL,
                                  PTM_annotation = FALSE,
                                  PTM_mass_column) {
@@ -376,7 +398,7 @@ obtain_mod_MSFragger <- function(data,
 
   # Iterate through each row
   for (i in seq_len(nrow(data))) {
-    mods <- strsplit(data[[column]][i], ", ")[[1]]
+    mods <- strsplit(data[[mod_column]][i], ", ")[[1]]
 
     # Handle the case when no modifications are present
     if (length(mods) == 0) {
@@ -388,13 +410,209 @@ obtain_mod_MSFragger <- function(data,
       ptm_masses <- numeric(length(mods))
       for (j in seq_along(mods)) {
         if (grepl("C-term", mods[j])) {
-          ptm_positions[j] <- nchar(data[[strip_seq_col]][i])
+          ptm_positions[j] <- nchar(data[[seq_column]][i])
         } else if (grepl("N-term", mods[j])) {
           ptm_positions[j] <- 0
         } else {
           ptm_positions[j] <- as.numeric(gsub("(\\d+)[A-Za-z]*.*", "\\1", mods[j]))
         }
         mass_value <- as.numeric(sub(".*\\((-?\\d+\\.\\d+)\\).*", "\\1", mods[j]))
+        ptm_masses[j] <- mass_value
+      }
+
+      ptm_positions_list[[i]] <- ptm_positions
+      ptm_mass_list[[i]] <- ptm_masses
+      reps_list[[i]] <- length(mods)
+    }
+  }
+
+  # Create new rows for multiple modifications
+  new_rows <- lapply(seq_len(nrow(data)), function(i) {
+    new_row <- data.table(PTM_position = ptm_positions_list[[i]],
+                          reps = rep(reps_list[[i]], reps_list[[i]]),
+                          data[i, names(data), with = FALSE])
+    # Add the PTM mass column dynamically
+    new_row[[PTM_mass_column]] <- ptm_mass_list[[i]]
+    return(new_row)
+  })
+
+  # Combine the results into a single data.table
+  result <- rbindlist(new_rows)
+
+  if (PTM_annotation & !is.null(PTM_table)) {
+    result <- merge(result, PTM_table, by = PTM_mass_column, all.x = TRUE)
+  }
+
+  return(result)
+}
+
+#' Obtain modification information from Peptide data generated by mzIdenML
+#'
+#' This function takes mzIdenML output containing a 'modification' column with
+#' PTM information and converts it into a new dataframe with the desired format of peptide
+#' sequences and associated PTM information.
+#'
+#' @param data A data.table with a column containing stripped sequence and a column containing PTM information.
+#' @param mod_column The name of the column containing the modified peptide sequences.
+#' @param seq_column The name of the column containing peptide sequences for mzIdenML.
+#' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
+#' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
+#' @param PTM_mass_column The name of the column containing the PTM mass information
+#' @return A data.table with 'PTM_position', 'PTM_type', 'reps', and other columns.
+#'
+#' @examples
+#' library(data.table)
+#' data <- data.table(
+#'   pepseq = c("DDREDMLVYQAK", "EAAENSLVAYK", "IEAELQDICNDVLELLDK"),
+#'   modification = c("-0.984016 (10), 15.994915 (13)", NA, "15.994915 (12)"),
+#'   Condition1 = c("A", "B", "B"),
+#'   Condition2 = c("C", "C", "D")
+#' )
+#' PTM_table <- data.table(
+#'   PTM_mass = c(-0.984016, 15.994915),
+#'   PTM_type = c("Amid", "Ox")
+#' )
+#' mod_column <- "modification"
+#' seq_column <- "pepseq"
+#' converted_data <- obtain_mod_mzIdenML(
+#'   data,
+#'   mod_column,
+#'   seq_column,
+#'   PTM_table,
+#'   PTM_annotation = TRUE,
+#'   PTM_mass_column = "PTM_mass"
+#' )
+#'
+#' @import data.table
+#'
+#' @export
+obtain_mod_mzIdenML <- function(data,
+                                 mod_column,
+                                 seq_column,
+                                 PTM_table = NULL,
+                                 PTM_annotation = FALSE,
+                                 PTM_mass_column) {
+  # Ensure data is a data.table
+  PTM_table <- as.data.table(PTM_table)
+
+  # Initialize empty lists to store the results
+  ptm_positions_list <- list()
+  ptm_mass_list <- list()
+  reps_list <- list()
+
+  # Iterate through each row
+  for (i in seq_len(nrow(data))) {
+    mods <- strsplit(data[[mod_column]][i], ", ")[[1]]
+
+    # Handle the case when no modifications are present
+    if (length(mods) == 0) {
+      ptm_positions_list[[i]] <- NA
+      ptm_mass_list[[i]] <- NA
+      reps_list[[i]] <- 1
+    } else {
+      ptm_positions <- integer(length(mods))
+      ptm_masses <- numeric(length(mods))
+      for (j in seq_along(mods)) {
+        ptm_positions[j] <- as.numeric(sub(".*\\((\\d+)\\).*", "\\1", mods[j]))
+        mass_value <- as.numeric(sub("^(-?\\d+\\.\\d+).*", "\\1", mods[j]))
+        ptm_masses[j] <- mass_value
+      }
+
+      ptm_positions_list[[i]] <- ptm_positions
+      ptm_mass_list[[i]] <- ptm_masses
+      reps_list[[i]] <- length(mods)
+    }
+  }
+
+  # Create new rows for multiple modifications
+  new_rows <- lapply(seq_len(nrow(data)), function(i) {
+    new_row <- data.table(PTM_position = ptm_positions_list[[i]],
+                          reps = rep(reps_list[[i]], reps_list[[i]]),
+                          data[i, names(data), with = FALSE])
+    # Add the PTM mass column dynamically
+    new_row[[PTM_mass_column]] <- ptm_mass_list[[i]]
+    return(new_row)
+  })
+
+  # Combine the results into a single data.table
+  result <- rbindlist(new_rows)
+
+  if (PTM_annotation & !is.null(PTM_table)) {
+    result <- merge(result, PTM_table, by = PTM_mass_column, all.x = TRUE)
+  }
+
+  return(result)
+}
+
+#' Obtain modification information from Peptide data generated by mzTab
+#'
+#' This function takes mzTab output containing a 'modifications' column with
+#' PTM information and converts it into a new dataframe with the desired format of peptide
+#' sequences and associated PTM information.
+#'
+#' @param data A data.table with a column containing stripped sequence and a column containing PTM information.
+#' @param mod_column The name of the column containing the modified peptide sequences.
+#' @param seq_column The name of the column containing peptide sequences for mzTab
+#' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
+#' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
+#' @param PTM_mass_column The name of the column containing the PTM mass information
+#' @return A data.table with 'PTM_position', 'PTM_type', 'reps', and other columns.
+#'
+#' @examples
+#' library(data.table)
+#' data <- data.table(
+#'   sequence = c("DDREDMLVYQAK", "EAAENSLVAYK", "IEAELQDICNDVLELLDK"),
+#'   modifications = c("4-UNIMOD:7,10-UNIMOD:35", NA, "8-UNIMOD:7"),
+#'   Condition1 = c("A", "B", "B"),
+#'   Condition2 = c("C", "C", "D")
+#' )
+#' PTM_table <- data.table(
+#'   PTM_mass = c("UNIMOD:7", "UNIMOD:35"),
+#'   PTM_type = c("Amid", "Ox")
+#' )
+#' mod_column <- "modifications"
+#' seq_column <- "sequence"
+#' converted_data <- obtain_mod_mzTab(
+#'   data,
+#'   mod_column,
+#'   seq_column,
+#'   PTM_table,
+#'   PTM_annotation = TRUE,
+#'   PTM_mass_column = "PTM_mass"
+#' )
+#'
+#' @import data.table
+#'
+#' @export
+obtain_mod_mzTab <- function(data,
+                                mod_column,
+                                seq_column,
+                                PTM_table = NULL,
+                                PTM_annotation = FALSE,
+                                PTM_mass_column) {
+  # Ensure data is a data.table
+  PTM_table <- as.data.table(PTM_table)
+
+  # Initialize empty lists to store the results
+  ptm_positions_list <- list()
+  ptm_mass_list <- list()
+  reps_list <- list()
+
+  # Iterate through each row
+  for (i in seq_len(nrow(data))) {
+    mods <- strsplit(data[[mod_column]][i], ",")[[1]]
+
+    # Handle the case when no modifications are present
+    if (length(mods) == 0) {
+      ptm_positions_list[[i]] <- NA
+      ptm_mass_list[[i]] <- NA
+      reps_list[[i]] <- 1
+    } else {
+      ptm_positions <- integer(length(mods))
+      ptm_masses <- numeric(length(mods))
+      for (j in seq_along(mods)) {
+        ptm_positions[j] <- as.numeric(sub("^(\\d+)-.*", "\\1", mods[j]))
+        mass_value <- sub("^\\d+-(.*)", "\\1", mods[j])
         ptm_masses[j] <- mass_value
       }
 
@@ -431,7 +649,7 @@ obtain_mod_MSFragger <- function(data,
 #' desired format of peptide sequences and associated PTM information.
 #'
 #' @param data A data.table with a column containing PTM information.
-#' @param column The name of the column containing the modified peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
 #' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -456,15 +674,16 @@ obtain_mod_MSFragger <- function(data,
 #'   PTM_mass = c(57.02, -0.98, 15.9949),
 #'   PTM_type = c("Cam", "Amid", "Ox")
 #' )
-#' column <- 'modified_peptide'
+#' mod_column <- 'modified_peptide'
 #' PTM_mass_column <- "PTM_mass"
-#' converted_data <- obtain_mod_Comet(data, column, PTM_table, PTM_annotation = TRUE, PTM_mass_column)
+#' converted_data <- obtain_mod_Comet(data, mod_column, PTM_table,
+#' PTM_annotation = TRUE, PTM_mass_column)
 #'
 #' @import data.table
 #'
 #' @export
 obtain_mod_Comet <- function(data,
-                             column,
+                             mod_column,
                              PTM_table = NULL,
                              PTM_annotation = FALSE,
                              PTM_mass_column) {
@@ -472,7 +691,7 @@ obtain_mod_Comet <- function(data,
   PTM_table <- as.data.table(PTM_table)
 
   # Remove characters before the first dot and after the second dot
-  cleaned_sequences <- gsub("^[A-Za-z]\\.|\\.[A-Za-z]$", "", data[[column]])
+  cleaned_sequences <- gsub("^[A-Za-z]\\.|\\.[A-Za-z]$", "", data[[mod_column]])
 
   # Extract PTM information using regular expression
   ptm_matches <- gregexpr("\\[([^]]+)\\]", cleaned_sequences)
@@ -532,7 +751,7 @@ obtain_mod_Comet <- function(data,
 #' desired format of peptide sequences and associated PTM information.
 #'
 #' @param data A dataframe with 'Stripped.Sequence' column and 'Modified.Sequence' column containing modified peptide sequences.
-#' @param column The name of the column containing the modified peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
 #' @param PTM_table A dataframe with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -567,7 +786,7 @@ obtain_mod_Comet <- function(data,
 #'
 #' @export
 obtain_mod_DIANN <- function(data,
-                             column,
+                             mod_column,
                              PTM_table = NULL,
                              PTM_annotation = FALSE,
                              PTM_mass_column) {
@@ -575,8 +794,8 @@ obtain_mod_DIANN <- function(data,
   PTM_table <- as.data.table(PTM_table)
 
   # Extract PTM information using regular expression
-  ptm_matches <- gregexpr("\\(([^)]+)\\)", data[[column]])
-  ptm_info <- regmatches(data[[column]], ptm_matches)
+  ptm_matches <- gregexpr("\\(([^)]+)\\)", data[[mod_column]])
+  ptm_info <- regmatches(data[[mod_column]], ptm_matches)
   for (i in seq_along(ptm_info)) {
     ptm_info[[i]] <- gsub("\\+|\\(|\\)", "", ptm_info[[i]])
   }
@@ -631,7 +850,7 @@ obtain_mod_DIANN <- function(data,
 #' desired format of peptide sequences and associated PTM information.
 #'
 #' @param data A data.table with a column containing PTM information.
-#' @param column The name of the column containing the modified peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
 #' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -663,7 +882,7 @@ obtain_mod_DIANN <- function(data,
 #'
 #' @export
 obtain_mod_Skyline <- function(data,
-                               column,
+                               mod_column,
                                PTM_table,
                                PTM_annotation = FALSE,
                                PTM_mass_column) {
@@ -671,8 +890,8 @@ obtain_mod_Skyline <- function(data,
   PTM_table <- as.data.table(PTM_table)
 
   # Extract PTM information using regular expression
-  ptm_matches <- gregexpr("\\[([^]]+)\\]", data[[column]])
-  ptm_info <- regmatches(data[[column]], ptm_matches)
+  ptm_matches <- gregexpr("\\[([^]]+)\\]", data[[mod_column]])
+  ptm_info <- regmatches(data[[mod_column]], ptm_matches)
   for (i in seq_along(ptm_info)) {
     ptm_value <- gsub("\\+|\\[|\\]", "", ptm_info[[i]])
     ptm_info[[i]] <- ptm_value
@@ -728,7 +947,7 @@ obtain_mod_Skyline <- function(data,
 #' sequences and associated PTM information.
 #'
 #' @param data A data.table with a column containing modified peptide sequences.
-#' @param column The name of the column containing the modified peptide sequences.
+#' @param mod_column The name of the column containing the modified peptide sequences.
 #' @param PTM_table A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.
 #' @param PTM_annotation A logical value indicating whether to include PTM annotation information in the result.
 #' @param PTM_mass_column The name of the column containing the PTM mass information
@@ -760,7 +979,7 @@ obtain_mod_Skyline <- function(data,
 #'
 #' @export
 obtain_mod_Maxquant <- function(data,
-                                column,
+                                mod_column,
                                 PTM_table = NULL,
                                 PTM_annotation = FALSE,
                                 PTM_mass_column) {
@@ -768,8 +987,8 @@ obtain_mod_Maxquant <- function(data,
   PTM_table <- as.data.table(PTM_table)
 
   # Extract PTM information using regular expression
-  ptm_matches <- gregexpr("\\(([^]]+)\\)", data[[column]])
-  ptm_info <- regmatches(data[[column]], ptm_matches)
+  ptm_matches <- gregexpr("\\(([^]]+)\\)", data[[mod_column]])
+  ptm_info <- regmatches(data[[mod_column]], ptm_matches)
   for (i in seq_along(ptm_info)) {
     ptm_info[[i]] <- gsub("\\+|\\(|\\)", "", ptm_info[[i]])
   }

@@ -6,7 +6,7 @@
 \usage{
 obtain_mod_Comet(
   data,
-  column,
+  mod_column,
   PTM_table = NULL,
   PTM_annotation = FALSE,
   PTM_mass_column
@@ -15,7 +15,7 @@ obtain_mod_Comet(
 \arguments{
 \item{data}{A data.table with a column containing PTM information.}
 
-\item{column}{The name of the column containing the modified peptide sequences.}
+\item{mod_column}{The name of the column containing the modified peptide sequences.}
 
 \item{PTM_table}{A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.}
 
@@ -50,8 +50,9 @@ PTM_table <- data.table(
   PTM_mass = c(57.02, -0.98, 15.9949),
   PTM_type = c("Cam", "Amid", "Ox")
 )
-column <- 'modified_peptide'
+mod_column <- 'modified_peptide'
 PTM_mass_column <- "PTM_mass"
-converted_data <- obtain_mod_Comet(data, column, PTM_table, PTM_annotation = TRUE, PTM_mass_column)
+converted_data <- obtain_mod_Comet(data, mod_column, PTM_table,
+PTM_annotation = TRUE, PTM_mass_column)
 
 }

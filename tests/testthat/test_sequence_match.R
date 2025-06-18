@@ -119,7 +119,7 @@ test_that("match_and_calculate_positions works correctly", {
   # Check the results
   expect_equal(nrow(matching_result), 3)
   expect_equal(matching_result$Sequence, c("AAA", "DDD", "DDD"))
-  expect_equal(matching_result$Start_Position, c("4", "4", "4"))
-  expect_equal(matching_result$End_Position, c("6", "6", "6"))
+  expect_equal(matching_result$start_position, c("4", "4", "4"))
+  expect_equal(matching_result$end_position, c("6", "6", "6"))
   expect_equal(matching_result$Region_2, c("Arm_1", "Arm_2", "Arm_2"))
 })

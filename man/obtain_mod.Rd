@@ -7,9 +7,9 @@ based on the specified data type}
 \usage{
 obtain_mod(
   data,
-  column,
+  mod_column,
   type,
-  strip_seq_col = NULL,
+  seq_column = NULL,
   PTM_table = NULL,
   PTM_annotation = FALSE,
   PTM_mass_column
@@ -18,11 +18,13 @@ obtain_mod(
 \arguments{
 \item{data}{A data frame with the peptide sequences.}
 
-\item{column}{The name of the column containing the modified peptide sequences.}
+\item{mod_column}{The name of the column containing the modified peptide sequences.}
 
 \item{type}{A character string specifying the data type (e.g. 'Skyline' or 'Maxquant').}
 
-\item{strip_seq_col}{(Optional) The name of the column containing the stripped peptide sequences.}
+\item{seq_column}{(Optional) The name of the column containing peptide sequences for MSFragger, mzid and mzTab.
+This parameter is required for the "MSFragger", "mzIdenML" and "mzTab" type and can be omitted
+for other types.}
 
 \item{PTM_table}{A data frame with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.}
 
@@ -41,7 +43,7 @@ sequences and associated PTM information. Due to the flexibility of outputs from
 multiple platform, the PTM mass to type table needs to be provided if convertion to PTM_type is needed.
 The result includes 'Peptide', 'PTM_position', 'PTM_type' and 'PTM_mass' columns.The function chooses
 the appropriate converting method based on the specified data type ('PEAKS',
-'Spectronaut', 'MSFragger', 'Comet', 'DIANN', 'Skyline' or 'Maxquant'),
+'Spectronaut', 'MSFragger', 'Comet', 'DIANN', 'Skyline', 'Maxquant', 'mzIdenML' or 'mzTab'),
 allowing you to convert the data into a consistent format for further analysis.
 }
 \examples{
@@ -62,7 +64,7 @@ converted_data_skyline <- obtain_mod(
   data_skyline,
   'Peptide Modified Sequence',
   'Skyline',
-  strip_seq_col = NULL,
+  seq_column = NULL,
   PTM_table,
   PTM_annotation = TRUE,
   PTM_mass_column = "PTM_mass"
@@ -84,7 +86,7 @@ converted_data_maxquant <- obtain_mod(
   data_maxquant,
   'Modified sequence',
   'Maxquant',
-  strip_seq_col = NULL,
+  seq_column = NULL,
   PTM_table,
   PTM_annotation = TRUE,
   PTM_mass_column = "PTM_mass"

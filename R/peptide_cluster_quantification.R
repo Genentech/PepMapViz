@@ -110,8 +110,8 @@
 #'   Condition_2 = c("Donor1", "Donor2", "Donor2"),
 #'   Region_1 = c("VH", "VL", "VL"),
 #'   Region_2 = c("Arm_1", "Arm_2", "Arm_2"),
-#'   Start_Position = c(4, 4, 4),
-#'   End_Position = c(6, 6, 6),
+#'   start_position = c(4, 4, 4),
+#'   end_position = c(6, 6, 6),
 #'   PTM_position = c(NA, 2, 0),
 #'   PTM_type = c(NA, "O", "C"),
 #'   Area = c(100, 200, 200),
@@ -173,8 +173,8 @@ peptide_quantification <- function(whole_seq, matching_result, matching_columns,
 #'   Condition_2 = c("Donor1", "Donor2", "Donor2"),
 #'   Region_1 = c("VH", "VL", "VL"),
 #'   Region_2 = c("Arm_1", "Arm_2", "Arm_2"),
-#'   Start_Position = c(4, 4, 4),
-#'   End_Position = c(6, 6, 6),
+#'   start_position = c(4, 4, 4),
+#'   end_position = c(6, 6, 6),
 #'   PTM_position = c(NA, 2, 0),
 #'   PTM_type = c(NA,"O","C"),
 #'   Area = c(100, 200, 200),
@@ -233,15 +233,15 @@ calculate_PSM <- function(row, matching_result, matching_columns, distinct_colum
   # Subset result based on filtering condition
   result_filtered <- matching_result[filter_condition, ]
   # Apply as.numeric to the specified columns
-  columns_to_convert <- c("Start_Position", "End_Position", "reps", "PTM_position")
+  columns_to_convert <- c("start_position", "end_position", "reps", "PTM_position")
   result_filtered[columns_to_convert] <- lapply(result_filtered[columns_to_convert], as.numeric)
 
   if (is.null(distinct_columns)) {
     region_data$PSM <- sapply(region_data$Position, function(pos) {
       if (reps) {
-        sum((result_filtered$Start_Position <= pos & result_filtered$End_Position >= pos) / result_filtered$reps)
+        sum((result_filtered$start_position <= pos & result_filtered$end_position >= pos) / result_filtered$reps)
       } else {
-        sum(result_filtered$Start_Position <= pos & result_filtered$End_Position >= pos)
+        sum(result_filtered$start_position <= pos & result_filtered$end_position >= pos)
       }
     })
   } else {
@@ -261,9 +261,9 @@ calculate_PSM <- function(row, matching_result, matching_columns, distinct_colum
 
       distinct_result$PSM <- sapply(distinct_result$Position, function(pos) {
         if (reps) {
-          sum((result_combo$Start_Position <= pos & result_combo$End_Position >= pos) / result_combo$reps)
+          sum((result_combo$start_position <= pos & result_combo$end_position >= pos) / result_combo$reps)
         } else {
-          sum(result_combo$Start_Position <= pos & result_combo$End_Position >= pos)
+          sum(result_combo$start_position <= pos & result_combo$end_position >= pos)
         }
       })
     for (col in distinct_columns) {
@@ -282,7 +282,7 @@ calculate_PSM <- function(row, matching_result, matching_columns, distinct_colum
     } else {
       for (i in 1:nrow(result_filtered)) {
         if (!is.na(result_filtered$PTM_position[i])) {
-          PTM_pos <- result_filtered$Start_Position[i] + result_filtered$PTM_position[i] - 1
+          PTM_pos <- result_filtered$start_position[i] + result_filtered$PTM_position[i] - 1
 
           if (!is.null(distinct_columns)) {
             condition <- combined_result$Position == PTM_pos
@@ -413,8 +413,8 @@ calculate_PSM <- function(row, matching_result, matching_columns, distinct_colum
 #'   Condition_2 = c("Donor1", "Donor2", "Donor2"),
 #'   Region_1 = c("VH", "VL", "VL"),
 #'   Region_2 = c("Arm_1", "Arm_2", "Arm_2"),
-#'   Start_Position = c(4, 4, 4),
-#'   End_Position = c(6, 6, 6),
+#'   start_position = c(4, 4, 4),
+#'   end_position = c(6, 6, 6),
 #'   PTM_position = c(NA, 2, 0),
 #'   PTM_type = c(NA, "O", "C"),
 #'   Area = c(100, 200, 200),
@@ -474,8 +474,8 @@ calculate_all_PSM <- function(whole_seq, matching_result, matching_columns, dist
 #'   Condition_2 = c("Donor1", "Donor2", "Donor2"),
 #'   Region_1 = c("VH", "VL", "VL"),
 #'   Region_2 = c("Arm_1", "Arm_2", "Arm_2"),
-#'   Start_Position = c(4, 4, 4),
-#'   End_Position = c(6, 6, 6),
+#'   start_position = c(4, 4, 4),
+#'   end_position = c(6, 6, 6),
 #'   PTM_position = c(NA, 2, 0),
 #'   PTM_type = c(NA,"O","C"),
 #'   Area = c(100, 200, 200),
@@ -536,7 +536,7 @@ calculate_Area <- function(row, matching_result, matching_columns, distinct_colu
   # Subset result based on filtering condition
   result_filtered <- matching_result[filter_condition, ]
   # Apply as.numeric to the specified columns
-  columns_to_convert <- c("Start_Position", "End_Position", "reps", "PTM_position")
+  columns_to_convert <- c("start_position", "end_position", "reps", "PTM_position")
   columns_to_convert <- c(columns_to_convert, area_column)
   result_filtered[columns_to_convert] <- lapply(result_filtered[columns_to_convert], as.numeric)
 
@@ -557,10 +557,10 @@ calculate_Area <- function(row, matching_result, matching_columns, distinct_colu
   if (is.null(distinct_columns)) {
     region_data$Area <- sapply(region_data$Position, function(pos) {
       if (reps) {
-        sum(ifelse(result_filtered$Start_Position <= pos & result_filtered$End_Position >= pos,
+        sum(ifelse(result_filtered$start_position <= pos & result_filtered$end_position >= pos,
                    result_filtered[[area_column]] / result_filtered$reps, 0))
       } else {
-        sum(result_filtered$Start_Position <= pos & result_filtered$End_Position >= pos)
+        sum(result_filtered$start_position <= pos & result_filtered$end_position >= pos)
       }
     })
   } else {
@@ -580,10 +580,10 @@ calculate_Area <- function(row, matching_result, matching_columns, distinct_colu
 
       distinct_result$Area <- sapply(distinct_result$Position, function(pos) {
         if (reps) {
-          sum(ifelse(result_combo$Start_Position <= pos & result_combo$End_Position >= pos,
+          sum(ifelse(result_combo$start_position <= pos & result_combo$end_position >= pos,
                      result_combo[[area_column]] / result_combo$reps, 0))
         } else {
-          sum(result_combo$Start_Position <= pos & result_combo$End_Position >= pos)
+          sum(result_combo$start_position <= pos & result_combo$end_position >= pos)
         }
       })
       for (col in distinct_columns) {
@@ -607,7 +607,7 @@ calculate_Area <- function(row, matching_result, matching_columns, distinct_colu
     } else {
       for (i in 1:nrow(result_filtered)) {
         if (!is.na(result_filtered$PTM_position[i])) {
-          PTM_pos <- result_filtered$Start_Position[i] + result_filtered$PTM_position[i] - 1
+          PTM_pos <- result_filtered$start_position[i] + result_filtered$PTM_position[i] - 1
 
           if (!is.null(distinct_columns)) {
             condition <- combined_result$Position == PTM_pos
@@ -741,8 +741,8 @@ calculate_Area <- function(row, matching_result, matching_columns, distinct_colu
 #'   Condition_2 = c("Donor1", "Donor2", "Donor2"),
 #'   Region_1 = c("VH", "VL", "VL"),
 #'   Region_2 = c("Arm_1", "Arm_2", "Arm_2"),
-#'   Start_Position = c(4, 4, 4),
-#'   End_Position = c(6, 6, 6),
+#'   start_position = c(4, 4, 4),
+#'   end_position = c(6, 6, 6),
 #'   PTM_position = c(NA, 2, 0),
 #'   PTM_type = c(NA, "O", "C"),
 #'   Area = c(100, 200, 200),

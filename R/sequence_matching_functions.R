@@ -12,8 +12,11 @@
 #'              information including the domain and region information.
 #'              'Region_Sequence' column is required for the sequence information.
 #'              Change the column name if it is different than 'Region_Sequence'.
-#' @param match_columns A character vector of column names to match on while
-#'                  matching peptide sequence.
+#' @param match_columns A character vector of column names that must exist in
+#' both peptide_data and whole_seq. When searching for peptide sequence matches,
+#' the function will only consider rows in whole_seq where the values in all
+#' columns specified here exactly match the corresponding values in the current
+#' row of peptide_data.
 #' @param column_keep (Optional) The name of the columns in peptide_data to
 #'                  keep in result data frame.
 #' @param sequence_length (Optional) The sequence length range of peptide that
@@ -169,16 +172,16 @@ match_and_calculate_positions <- function(peptide_data, column, whole_seq, match
             next
           }
           for (k in 1:nrow(match_positions)) {
-            start_position <- match_positions[k, 1]
-            end_position <- match_positions[k, 2]
-            if (!is.na(start_position) & !is.na(end_position)) {
+            start_pos <- match_positions[k, 1]
+            end_pos <- match_positions[k, 2]
+            if (!is.na(start_pos) & !is.na(end_pos)) {
               remaining_columns <- setdiff(names(whole_seq), excluded_columns)
               peptide_row <- as.matrix(peptide_data[i, c(column, match_columns, column_keep), drop = FALSE])
               whole_seq_row <- as.matrix(whole_seq[j, remaining_columns, drop = FALSE])
               new_row <- cbind(peptide_row,
                                whole_seq_row,
-                               Start_Position = start_position,
-                               End_Position = end_position)
+                               start_position = start_pos,
+                               end_position = end_pos)
               result_single_peptide <- rbind(result_single_peptide, new_row)
             }
           }

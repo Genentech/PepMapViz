@@ -14,11 +14,42 @@
 #'
 #' @export
 combine_files_from_folder <- function(folder_path) {
-  # List all CSV and TXT files in the folder
-  file_list <- list.files(folder_path, pattern = "\\.csv$|\\.tsv$", full.names = TRUE)
+  # List all relevant files (case insensitive)
+  file_list <- list.files(folder_path,
+                          pattern = "\\.csv$|\\.tsv$|\\.txt$|\\.mzid$|\\.mztab$",
+                          full.names = TRUE,
+                          ignore.case = TRUE)
 
-  # Read and combine files using data.table's fread and rbindlist functions
-  combined_df <- rbindlist(lapply(file_list, fread))
+  # Function to read files based on extension
+  read_file <- function(file_path) {
+    ext <- tolower(tools::file_ext(file_path))
+
+    if (ext %in% c("csv", "tsv", "txt")) {
+      return(data.table::fread(file_path))
+    } else if (ext == "mzid") {
+      if (!requireNamespace("mzID", quietly = TRUE))
+        stop("Package 'mzID' required for mzID files. Install with BiocManager::install('mzID')")
+      return(mzID::flatten(mzID::mzID(file_path)))
+    } else if (ext == "mztab") {
+      if (!requireNamespace("MSnbase", quietly = TRUE))
+        stop("Package 'MSnbase' required for mzTab files. Install with BiocManager::install('MSnbase')")
+      return(MSnbase::fData(MSnbase::readMzTabData(file_path, "PSM")))
+    }
+  }
+
+  # Read and combine files with error handling
+  df_list <- lapply(file_list, function(file) {
+    tryCatch(
+      read_file(file),
+      error = function(e) {
+        message("Error processing ", basename(file), ": ", e$message)
+        NULL
+      }
+    )
+  })
+
+  # Remove failed reads and combine
+  combined_df <- data.table::rbindlist(Filter(Negate(is.null), df_list), fill = TRUE)
 
   return(combined_df)
 }

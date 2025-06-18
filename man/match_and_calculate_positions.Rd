@@ -24,8 +24,11 @@ information including the domain and region information.
 'Region_Sequence' column is required for the sequence information.
 Change the column name if it is different than 'Region_Sequence'.}
 
-\item{match_columns}{A character vector of column names to match on while
-matching peptide sequence.}
+\item{match_columns}{A character vector of column names that must exist in
+both peptide_data and whole_seq. When searching for peptide sequence matches,
+the function will only consider rows in whole_seq where the values in all
+columns specified here exactly match the corresponding values in the current
+row of peptide_data.}
 
 \item{sequence_length}{(Optional) The sequence length range of peptide that
 we want to keep in the result. (e.g. c(1, 5) will include

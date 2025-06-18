@@ -17,7 +17,7 @@ test_that("obtain_mod works correctly for different platforms", {
     data_skyline,
     'Peptide Modified Sequence',
     'Skyline',
-    strip_seq_col = NULL,
+    seq_column = NULL,
     PTM_table,
     PTM_annotation = TRUE,
     PTM_mass_column = "PTM_mass"
@@ -43,7 +43,7 @@ test_that("obtain_mod works correctly for different platforms", {
     data_maxquant,
     'Modified sequence',
     'Maxquant',
-    strip_seq_col = NULL,
+    seq_column = NULL,
     PTM_table,
     PTM_annotation = TRUE,
     PTM_mass_column = "PTM_mass"
@@ -68,13 +68,13 @@ test_that("obtain_mod works correctly for different platforms", {
   )
   PTM_table <- data.table(PTM_mass = c(42, -0.98, 57.02),
                           PTM_type = c("Acet", "Amid", "Cam"))
-  column <- "Peptide"
+  mod_column <- "Peptide"
   PTM_mass_column <- "PTM_mass"
   converted_data_peaks <- obtain_mod(
     data_peaks,
-    column,
+    mod_column,
     'PEAKS',
-    strip_seq_col = NULL,
+    seq_column = NULL,
     PTM_table,
     PTM_annotation = TRUE,
     PTM_mass_column

@@ -6,7 +6,7 @@
 \usage{
 obtain_mod_PEAKS(
   data,
-  column,
+  mod_column,
   PTM_table = NULL,
   PTM_annotation = FALSE,
   PTM_mass_column
@@ -15,7 +15,7 @@ obtain_mod_PEAKS(
 \arguments{
 \item{data}{A dataframe with a column containing modified peptide sequences.}
 
-\item{column}{The name of the column containing the modified peptide sequences.}
+\item{mod_column}{The name of the column containing the modified peptide sequences.}
 
 \item{PTM_table}{A dataframe with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.}
 
@@ -48,8 +48,9 @@ data <- data.table(
 )
 PTM_table <- data.table(PTM_mass = c(42, -0.98, 57.02),
                         PTM_type = c("Acet", "Amid", "Cam"))
-column <- "Peptide"
+mod_column <- "Peptide"
 PTM_mass_column <- "PTM_mass"
-converted_data <- obtain_mod_PEAKS(data, column, PTM_table, PTM_annotation = TRUE, PTM_mass_column)
+converted_data <- obtain_mod_PEAKS(data, mod_column, PTM_table,
+PTM_annotation = TRUE, PTM_mass_column)
 
 }

@@ -6,7 +6,7 @@
 \usage{
 obtain_mod_Skyline(
   data,
-  column,
+  mod_column,
   PTM_table,
   PTM_annotation = FALSE,
   PTM_mass_column
@@ -15,7 +15,7 @@ obtain_mod_Skyline(
 \arguments{
 \item{data}{A data.table with a column containing PTM information.}
 
-\item{column}{The name of the column containing the modified peptide sequences.}
+\item{mod_column}{The name of the column containing the modified peptide sequences.}
 
 \item{PTM_table}{A data.table with columns 'PTM_mass' and 'PTM_type' containing PTM annotation information.}
 

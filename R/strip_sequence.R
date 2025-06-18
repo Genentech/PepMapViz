@@ -93,11 +93,14 @@ strip_sequence <- function(data, column, convert_column, type) {
 #'
 #' @export
 strip_sequence_PEAKS <- function(data, column, convert_column) {
+  # Ensure we're working with a data.table
+  setDT(data)
+
   # Remove characters before the first dot and after the last dot
   data[, (convert_column) := gsub("^[A-Za-z]\\.|\\.[A-Za-z]$", "", get(column))]
 
   # Remove characters within parentheses
-  data[, (convert_column) := gsub("\\([^)]+\\)", "", get(convert_column))]
+  set(data, j = convert_column, value = gsub("\\([^)]+\\)", "", data[[convert_column]]))
 
   return(data)
 }
@@ -164,7 +167,7 @@ strip_sequence_MSFragger <- function(data, column, convert_column) {
   data[, (convert_column) := gsub("^[A-Za-z]\\.|\\.[A-Za-z]$", "", get(column))]
 
   # Remove characters within square brackets
-  data[, (convert_column) := gsub("^_+|_+$|\\[.*?\\]", "", get(convert_column))]
+  set(data, j = convert_column, value = gsub("^_+|_+$|\\[.*?\\]", "", data[[convert_column]]))
 
   return(data)
 }
@@ -201,7 +204,7 @@ strip_sequence_Comet <- function(data, column, convert_column) {
   data[, (convert_column) := gsub("^[A-Za-z]\\.|\\.[A-Za-z]$", "", get(column))]
 
   # Remove characters within square brackets
-  data[, (convert_column) := gsub("^_+|_+$|\\[.*?\\]", "", get(convert_column))]
+  set(data, j = convert_column, value = gsub("^_+|_+$|\\[.*?\\]", "", data[[convert_column]]))
   return(data)
 }
 

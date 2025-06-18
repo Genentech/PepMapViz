@@ -20,13 +20,19 @@ create_peptide_plot(
   domain_start_column = "domain_start",
   domain_end_column = "domain_end",
   domain_type_column = "domain_type",
-  domain_color = NULL,
+  domain_border_color_column = NULL,
+  domain_fill_color_column = NULL,
+  add_domain_label = TRUE,
+  domain_label_size = 4,
+  domain_label_y_column = NULL,
+  domain_label_color = "black",
   PTM = FALSE,
   PTM_type_column = "PTM_type",
   PTM_color = NULL,
   add_label = TRUE,
   label_column = "Character",
-  label_value = NULL,
+  label_filter = NULL,
+  label_y = 1.28,
   column_order = NULL
 )
 }
@@ -61,7 +67,17 @@ create_peptide_plot(
 
 \item{domain_type_column}{The name of the column in \code{domain} containing the type of the domain Default is 'domain_type'.}
 
-\item{domain_color}{A list of colors for the domain types. Default is NULL.}
+\item{domain_border_color_column}{The name of the column in \code{domain} containing the border color of the domain Default is 'domain_color'.}
+
+\item{domain_fill_color_column}{The name of the column in \code{domain} containing the fill color of the domain Default is 'domain_fill_color'.}
+
+\item{add_domain_label}{Logical; whether to annotate the domain type as text above the domain rectangle. Default is TRUE.}
+
+\item{domain_label_size}{Numeric; text size for the domain label. Default is 4.}
+
+\item{domain_label_y_column}{The name of the column in \code{domain} containing y-axis position for the domain label. Default is 'domain_label_y'.}
+
+\item{domain_label_color}{Character; color for domain label text. Default is 'black'.}
 
 \item{PTM}{A logical value indicating whether to include PTM (Post-Translational Modification) data in the plot. Default is FALSE.}
 
@@ -73,7 +89,9 @@ create_peptide_plot(
 
 \item{label_column}{The name of the column in \code{data_with_psm} containing the labels to be added to the plot. Default is 'Character'.}
 
-\item{label_value}{A list of column names and their values to filter the data for the labels. Default is NULL.}
+\item{label_filter}{A list of column names and their values to filter the data for the labels. Default is NULL.}
+
+\item{label_y}{The position of y axis of the label.}
 
 \item{column_order}{A list of column names and their order for the plot. Default is NULL.}
 }
@@ -101,18 +119,13 @@ domain <- data.frame(
   Region_2 = c("Arm_1", "Arm_1", "Arm_1"),
   Condition_1 = c("Drug1", "Drug1", "Drug1"),
   domain_start = c(1, 3, 5),
-  domain_end = c(2, 4, 6)
+  domain_end = c(2, 4, 6),
+  domain_color = c("#F8766D", "#B79F00", "#00BA38"),
+  domain_fill_color = c("#F8766D", "#B79F00", "#00BA38"),
+  domain_label_y = c(1.35, 1.35, 1.35)
 )
 x_axis_vars <- c("Region_2", "Region_1")
 y_axis_vars <- c("Condition_2")
-domain_color <- c(
-"CDR H1" = "#F8766D",
-"CDR H2" = "#B79F00",
-"CDR H3" = "#00BA38",
-"CDR L1" = "#00BFC4",
-"CDR L2" = "#619CFF",
-"CDR L3" = "#F564E3"
-)
 PTM_color <- c(
   "Ox" = "red",
   "Deamid" = "cyan",
@@ -126,7 +139,7 @@ p <- create_peptide_plot(
   y_expand = c(0.2, 0.2),
   x_expand = c(0.5, 0.5),
   theme_options = list(),
-  labs_options = list(title = "PSM Plot", x = "Position", fill = "PSM"),
+  labs_options = list(title = "Area Plot", x = "Position", fill = "Area"),
   color_fill_column = 'Area',
   fill_gradient_options = list(),
   label_size = 5,
@@ -135,14 +148,20 @@ p <- create_peptide_plot(
   domain_start_column = "domain_start",
   domain_end_column = "domain_end",
   domain_type_column = "domain_type",
-  domain_color = domain_color,
+  domain_border_color_column = "domain_color",
+  domain_fill_color_column = "domain_fill_color",
+  add_domain_label = TRUE,
+  domain_label_size = 4,
+  domain_label_y_column = "domain_label_y",
+  domain_label_color = "black",
   PTM = FALSE,
   PTM_type_column = "PTM_type",
   PTM_color = PTM_color,
   add_label = TRUE,
   label_column = "Character",
-  label_value = NULL,
-  column_order = list(Region_1 = 'VH,VL')
+  label_filter = NULL,
+  label_y = 1,
+  column_order = list(Region_1 = 'VH')
 )
 print(p)
 

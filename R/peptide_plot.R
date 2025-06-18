@@ -18,13 +18,19 @@
 #' @param domain_start_column The name of the column in `domain` containing the start position of the domain Default is 'domain_start'.
 #' @param domain_end_column The name of the column in `domain` containing the end position of the domain Default is 'domain_end'.
 #' @param domain_type_column The name of the column in `domain` containing the type of the domain Default is 'domain_type'.
-#' @param domain_color A list of colors for the domain types. Default is NULL.
+#' @param domain_border_color_column The name of the column in `domain` containing the border color of the domain Default is 'domain_color'.
+#' @param domain_fill_color_column The name of the column in `domain` containing the fill color of the domain Default is 'domain_fill_color'.
+#' @param add_domain_label Logical; whether to annotate the domain type as text above the domain rectangle. Default is TRUE.
+#' @param domain_label_size Numeric; text size for the domain label. Default is 4.
+#' @param domain_label_y_column The name of the column in `domain` containing y-axis position for the domain label. Default is 'domain_label_y'.
+#' @param domain_label_color Character; color for domain label text. Default is 'black'.
 #' @param PTM A logical value indicating whether to include PTM (Post-Translational Modification) data in the plot. Default is FALSE.
 #' @param PTM_type_column The name of the column in `data_with_psm` containing the type of the PTM. Default is 'PTM_type'.
 #' @param PTM_color A list of colors for the PTM types. Default is NULL.
 #' @param add_label A logical value indicating whether to add labels to the plot. Default is TRUE.
 #' @param label_column The name of the column in `data_with_psm` containing the labels to be added to the plot. Default is 'Character'.
-#' @param label_value A list of column names and their values to filter the data for the labels. Default is NULL.
+#' @param label_filter A list of column names and their values to filter the data for the labels. Default is NULL.
+#' @param label_y The position of y axis of the label.
 #' @param column_order A list of column names and their order for the plot. Default is NULL.
 #'
 #' @return This function returns a ggplot object representing the PSM plot.
@@ -47,18 +53,13 @@
 #'   Region_2 = c("Arm_1", "Arm_1", "Arm_1"),
 #'   Condition_1 = c("Drug1", "Drug1", "Drug1"),
 #'   domain_start = c(1, 3, 5),
-#'   domain_end = c(2, 4, 6)
+#'   domain_end = c(2, 4, 6),
+#'   domain_color = c("#F8766D", "#B79F00", "#00BA38"),
+#'   domain_fill_color = c("#F8766D", "#B79F00", "#00BA38"),
+#'   domain_label_y = c(1.35, 1.35, 1.35)
 #' )
 #' x_axis_vars <- c("Region_2", "Region_1")
 #' y_axis_vars <- c("Condition_2")
-#' domain_color <- c(
-#' "CDR H1" = "#F8766D",
-#' "CDR H2" = "#B79F00",
-#' "CDR H3" = "#00BA38",
-#' "CDR L1" = "#00BFC4",
-#' "CDR L2" = "#619CFF",
-#' "CDR L3" = "#F564E3"
-#' )
 #' PTM_color <- c(
 #'   "Ox" = "red",
 #'   "Deamid" = "cyan",
@@ -72,7 +73,7 @@
 #'   y_expand = c(0.2, 0.2),
 #'   x_expand = c(0.5, 0.5),
 #'   theme_options = list(),
-#'   labs_options = list(title = "PSM Plot", x = "Position", fill = "PSM"),
+#'   labs_options = list(title = "Area Plot", x = "Position", fill = "Area"),
 #'   color_fill_column = 'Area',
 #'   fill_gradient_options = list(),
 #'   label_size = 5,
@@ -81,18 +82,25 @@
 #'   domain_start_column = "domain_start",
 #'   domain_end_column = "domain_end",
 #'   domain_type_column = "domain_type",
-#'   domain_color = domain_color,
+#'   domain_border_color_column = "domain_color",
+#'   domain_fill_color_column = "domain_fill_color",
+#'   add_domain_label = TRUE,
+#'   domain_label_size = 4,
+#'   domain_label_y_column = "domain_label_y",
+#'   domain_label_color = "black",
 #'   PTM = FALSE,
 #'   PTM_type_column = "PTM_type",
 #'   PTM_color = PTM_color,
 #'   add_label = TRUE,
 #'   label_column = "Character",
-#'   label_value = NULL,
-#'   column_order = list(Region_1 = 'VH,VL')
+#'   label_filter = NULL,
+#'   label_y = 1,
+#'   column_order = list(Region_1 = 'VH')
 #' )
 #' print(p)
 #'
 #' @import ggplot2
+#' @import DT
 #' @import ggforce
 #' @import ggnewscale
 #' @importFrom grDevices rainbow
@@ -121,14 +129,20 @@ create_peptide_plot <- function(data,
                                 domain_end_column = "domain_end",
                                 domain_type_column
                                 = "domain_type",
-                                domain_color = NULL,
+                                domain_border_color_column = NULL,
+                                domain_fill_color_column = NULL,
+                                add_domain_label = TRUE,
+                                domain_label_size = 4,
+                                domain_label_y_column = NULL,
+                                domain_label_color = "black",
                                 PTM = FALSE,
                                 PTM_type_column =
                                   "PTM_type",
                                 PTM_color = NULL,
                                 add_label = TRUE,
                                 label_column = "Character",
-                                label_value = NULL,
+                                label_filter = NULL,
+                                label_y = 1.28,
                                 column_order = NULL) {
   # Default fill gradient options
   default_fill_gradient_options <- list(
@@ -147,18 +161,73 @@ create_peptide_plot <- function(data,
   # Merge default and user-provided fill gradient options
   fill_gradient_options <- modifyList(default_fill_gradient_options, fill_gradient_options)
 
-  # Create Whole_labels from whole_seq if provided
-  Whole_labels <- data
-  if (!is.null(label_value)) {
-    for (col in names(label_value)) {
-      if (!col %in% colnames(Whole_labels)) {
-        Whole_labels[[col]] <- label_value[[col]]
-      } else {
-        Whole_labels <- Whole_labels[Whole_labels[[col]] == label_value[[col]], ]
+  # Create whole_labels with complete position coverage across facets
+  whole_labels <- data
+  domain_labels <- domain
+
+  if (!is.null(label_filter)) {
+    # Get all facet grouping variables
+    facet_vars <- intersect(
+      c(sapply(c(y_axis_vars, x_axis_vars), as.character)),
+      names(data)
+    )
+
+    # Get position-based columns from original data
+    pos_cols <- unique(intersect(
+      c("Position", label_column, facet_vars),
+      names(data)
+    ))
+
+    # Create combination grid for non-label_filter columns
+    non_label_cols <- setdiff(pos_cols, names(label_filter))
+    label_grid <- unique(data[non_label_cols])
+
+    # Process each label_filter column, splitting commas and expanding rows
+    for (col in names(label_filter)) {
+      # Split comma-separated values into a vector (e.g., "D1,D2" → c("D1", "D2"))
+      values <- trimws(strsplit(label_filter[[col]], ",")[[1]])
+
+      # Expand label_grid to include each split value as a new row
+      if (length(values) > 0) {
+        # Cross-join current label_grid with the split values for this column
+        split_df <- data.frame(new_col = values)
+        names(split_df) <- col
+        label_grid <- merge(label_grid, split_df, by = character())
       }
     }
+
+    # Remove duplicate positions while keeping all columns
+    whole_labels <- label_grid
+
+    # Get domain columns that match the filter
+    # Get all facet grouping variables
+    domain_facet_vars <- intersect(
+      c(sapply(c(y_axis_vars, x_axis_vars), as.character)),
+      names(domain)
+    )
+
+    domain_pos_cols <- unique(intersect(
+      c(domain_start_column, domain_end_column, domain_type_column, domain_label_y_column, domain_facet_vars),
+      names(domain)
+    ))
+
+    # Create combination grid for domain labels
+    domain_non_label_cols <- setdiff(domain_pos_cols, names(label_filter))
+    domain_label_grid <- unique(domain[domain_non_label_cols])
+
+    for (col in names(label_filter)) {
+      values <- trimws(strsplit(label_filter[[col]], ",")[[1]])
+
+      if (length(values) > 0) {
+        split_df <- data.frame(new_col = values)
+        names(split_df) <- col
+        domain_label_grid <- merge(domain_label_grid, split_df, by = character())
+      }
+    }
+    domain_labels <- domain_label_grid
   }
 
+  # Handle NA replacement
   data[[color_fill_column]][data[[color_fill_column]] == 0] <- NA
 
   # Reorder columns if column_order is provided
@@ -167,8 +236,8 @@ create_peptide_plot <- function(data,
       order_levels <- unlist(strsplit(column_order[[col]], ","))
       data <- data[data[[col]] %in% order_levels, ]
       data[[col]] <- factor(data[[col]], levels = order_levels)
-      if (col %in% colnames(Whole_labels)) {
-        Whole_labels[[col]] <- factor(Whole_labels[[col]], levels = order_levels)
+      if (col %in% colnames(whole_labels)) {
+        whole_labels[[col]] <- factor(whole_labels[[col]], levels = order_levels)
       }
       if (col %in% colnames(domain)) {
         domain[[col]] <- factor(domain[[col]], levels = order_levels)
@@ -178,7 +247,7 @@ create_peptide_plot <- function(data,
     data <- data[do.call(order, data[names(column_order)]), ]
   }
 
-  p <- ggplot(data, aes(x = Position)) +
+   p <- ggplot(data, aes(x = Position)) +
     geom_raster(data = data,
                 aes(
                   x = Position,
@@ -190,27 +259,6 @@ create_peptide_plot <- function(data,
     do.call(scale_fill_gradient, fill_gradient_options) +
     theme_minimal()
 
-  if (add_domain) {
-    p <- p +
-      geom_rect(
-        data = domain,
-        inherit.aes = FALSE,
-        aes(
-          xmin = !!sym(domain_start_column) - 0.5,
-          xmax = !!sym(domain_end_column) + 0.5,
-          ymin = -Inf,
-          ymax = Inf,
-          color = !!sym(domain_type_column)
-        ),
-        fill = NA,
-        alpha = 0,
-        show.legend = TRUE
-      ) +
-      guides(color = guide_legend(override.aes = list(fill = "white")))
-  }
-  if (!is.null(domain_color)) {
-    p <- p + scale_color_manual(values = domain_color)
-  }
 
   if (PTM) {
     PTM_data <- data[data$PTM == TRUE, ]
@@ -240,17 +288,71 @@ create_peptide_plot <- function(data,
                         na.value = "white")
   }
 
+
+  if (add_domain) {
+    # Create new columns for actual color values
+    domain$border_color_ <- if (!is.null(domain_border_color_column))
+      domain[[domain_border_color_column]]
+    else "black"
+    domain$fill_color_ <- if (!is.null(domain_fill_color_column))
+      domain[[domain_fill_color_column]]
+    else "white"
+
+    p <- p +
+      geom_rect(
+        data = domain,
+        inherit.aes = FALSE,
+        aes(
+          xmin = !!sym(domain_start_column) - 0.5,
+          xmax = !!sym(domain_end_column) + 0.5,
+          ymin = -Inf,
+          ymax = Inf,
+          color = I(.data$border_color_),
+          fill = I(.data$fill_color_)
+        ),
+        alpha = 0.2,
+        size = 0.1,
+        show.legend = TRUE  # Disable automatic legend
+      )
+  }
+
+  if (add_domain_label) {
+    # Calculate label positions using FILTERED domain_labels
+    domain_labels$label_x <- (domain_labels[[domain_start_column]] +
+                                domain_labels[[domain_end_column]]) / 2
+
+    # Determine Y position
+    if (!is.null(domain_label_y_column) && domain_label_y_column %in% names(domain_labels)) {
+      domain_labels$label_y <- domain_labels[[domain_label_y_column]]
+    } else {
+      domain_labels$label_y <- 1.25
+    }
+
+    p <- p +
+      geom_text(
+        data = domain_labels,  # Use filtered domain_labels
+        aes(
+          x = .data$label_x,
+          y = .data$label_y,
+          label = !!sym(domain_type_column)
+        ),
+        size = domain_label_size,
+        fontface = "bold",
+        color = domain_label_color
+      )
+  }
+
   if (add_label) {
     p <- p +
       geom_text(
-        data = Whole_labels,
+        data = whole_labels,
         aes(
           x = Position,
           y = 0.1,
           label = !!sym(label_column)
         ),
         size = label_size,
-        nudge_y = 1.28
+        nudge_y = label_y
       )
   }
 
@@ -275,7 +377,7 @@ create_peptide_plot <- function(data,
       panel.spacing.y = unit(1, "lines"),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
-      panel.background = element_rect(color = "black", fill = "white", linewidth = 1),
+      panel.background = element_rect(color = "black", fill = "white", linewidth = 0.1),
       strip.background = element_blank(),
       plot.background = element_rect(color = "black", fill = "white"),
       plot.margin = margin(10, 10, 10, 10),
